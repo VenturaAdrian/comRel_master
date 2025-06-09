@@ -38,18 +38,38 @@ export default function ViewForm() {
 
           {formData.comm_Docs && (
             <div>
-              <h3>Supporting Document:</h3>
-              <iframe
-                src={`${config.baseApi1}/files/${formData.comm_Docs}`}
-                width="100%"
-                height="600px"
-                title="Supporting Document"
-              />
-              <p>
-                <a href={`${config.baseApi1}/files/${formData.comm_Docs}`} download>
-                  Download Document
-                </a>
-              </p>
+              <h3>Supporting Documents:</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+                {formData.comm_Docs.split(',').map((file, index) => {
+                  const fileTrimmed = file.trim();
+                  const fileUrl = `${config.baseApi1}/files/${fileTrimmed}`;
+                  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileTrimmed);
+
+                  return (
+                    <div key={index} style={{ width: '200px' }}>
+                      {isImage ? (
+                        <img
+                          src={fileUrl}
+                          alt={`Document ${index + 1}`}
+                          style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                        />
+                      ) : (
+                        <iframe
+                          src={fileUrl}
+                          width="100%"
+                          height="200px"
+                          title={`Document ${index + 1}`}
+                        />
+                      )}
+                      <p>
+                        <a href={fileUrl} download>
+                          Download {fileTrimmed}
+                        </a>
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

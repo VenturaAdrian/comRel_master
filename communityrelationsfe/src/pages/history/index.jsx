@@ -17,7 +17,7 @@ export default function History() {
         })
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
-        setUserPosition(empInfo.emp_positions)
+        setUserPosition(empInfo.emp_position)
     },[])
 
     const handleEdit = (item) => {

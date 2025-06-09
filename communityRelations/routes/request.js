@@ -141,10 +141,11 @@ const storage = multer.diskStorage({
     destination: (req,file,cb) => {
         cb(null,DIR);
     },
-    filename: (req,file,cb) => {
-      const filename = mm + '_' + dd + '_' + yyyy +  '_' + file.originalname;
-      cb(null,  filename)
-    }
+    filename: function (req, file, cb) {
+    const original = file.originalname.replace(/\s+/g, '_'); // replace spaces
+    const uniqueName = `${new Date().toISOString().replace(/[:.]/g, '-')}_${original}`;
+    cb(null, uniqueName);
+  }
 });
     const upload = multer({
         storage,
@@ -153,7 +154,7 @@ const storage = multer.diskStorage({
 
 
 
-router.post('/add-request-form', upload.single('comm_Docs'), async (req, res) => {
+router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => {
   const currentTimestamp = new Date();
 
   try {
@@ -168,17 +169,21 @@ router.post('/add-request-form', upload.single('comm_Docs'), async (req, res) =>
       created_by
     } = req.body;
 
-    let comm_Docs = '';
-    if (req.file) {
-      const { originalname, filename, mimetype, size } = req.file;
-      comm_Docs = filename;
-      await knex('upload_master').insert({
-        original_name: originalname,
-        stored_name: filename,
-        mime_type: mimetype,
-        size: size,
-        upload_date: currentTimestamp
-      });
+    let docFilenames = [];
+
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const { originalname, filename, mimetype, size } = file;
+        docFilenames.push(filename);
+
+        await knex('upload_master').insert({
+          original_name: originalname,
+          stored_name: filename,
+          mime_type: mimetype,
+          size: size,
+          upload_date: currentTimestamp
+        });
+      }
     }
 
     await knex('request_master').insert({
@@ -188,7 +193,7 @@ router.post('/add-request-form', upload.single('comm_Docs'), async (req, res) =>
       date_Time,
       comm_Venue,
       comm_Guest,
-      comm_Docs,
+      comm_Docs: docFilenames.join(','),
       comm_Emps,
       comm_Benef,
       created_by,
