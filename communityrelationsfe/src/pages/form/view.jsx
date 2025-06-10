@@ -61,11 +61,6 @@ export default function ViewForm() {
                           title={`Document ${index + 1}`}
                         />
                       )}
-                      <p>
-                        <a href={fileUrl} download>
-                          Download {fileTrimmed}
-                        </a>
-                      </p>
                     </div>
                   );
                 })}

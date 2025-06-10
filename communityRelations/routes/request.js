@@ -3,8 +3,8 @@ var bcrypt = require('bcrypt');
 const router = express.Router();
 var Sequelize = require('sequelize');
 const multer = require('multer');
-
-
+const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config();
 
     var knex = require("knex")({
@@ -70,88 +70,39 @@ require('dotenv').config();
         tableName: 'request_master'
     })
 
-    
-
+    //VIEW HISTORY
     router.get('/history', async(req,res,next)=>{
-        console.log('/history mw was called')
-        try{
-            const data = await knex('request_master').select('*'); 
-            res.json(data)
-            console.log(data)
-        }catch(err){
-            console.error('ERROR FETCHING:', err);
-                res.status(500).json({error: 'Failed fetch data'})
-            }
+      try{
+        const data = await knex('request_master').select('*'); 
+        res.json(data)
+        console.log(data)
+      }catch(err){
+        console.error('ERROR FETCHING:', err);
+        res.status(500).json({error: 'Failed fetch data'})
+        }
     });
 
-    router.get('/editform', async (req, res, next) => {
-  const requestID = req.query.id; // get the requestID from query string
-  try {
-        const getRequest = await Requests.findAll({
-            where:{
-                request_id: req.query.id
-            }
-        })
-        console.log(getRequest)
 
 
-        const result = {
-            request_id: getRequest[0].request_status
-        }
-        res.json(getRequest[0]);
-  }catch(err){
-    
-  }
-
-});
-
-router.post('/updateform', async (req, res) => {
-  try {
-    const updated = await knex('request_master')
-      .where({ request_id: req.body.request_id })
-      .update({
-        request_status: req.body.request_status,
-        comm_Area: req.body.comm_Area,
-        comm_Act: req.body.comm_Act,
-        date_Time: req.body.date_Time,
-        comm_Venue: req.body.comm_Venue,
-        comm_Guest: req.body.comm_Guest,
-        comm_Docs: req.body.comm_Docs,
-        comm_Emps: req.body.comm_Emps,
-        comm_Benef: req.body.comm_Benef,
-        updated_by: 'user', // change if needed
-        updated_at: new Date()
-      });
-
-    res.status(200).json({ message: 'Request updated successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to update request' });
-  }
-});
-
-    var today = new Date();
     const DIR = './uploads';
-    var dd = String(today.getDate()).padStart(2, '0');
-    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-    var yyyy = today.getFullYear();
 
+    const storage = multer.diskStorage({
+        destination: (req,file,cb) => {
+            cb(null,DIR);
+        },
+        filename: function (req, file, cb) { 
+        const original = file.originalname.replace(/\s+/g, '_'); 
+        const uniqueName = `${new Date().toISOString().replace(/[:.]/g, '-')}_${original}`;
+        cb(null, uniqueName);
+        }
+    });
 
-const storage = multer.diskStorage({
-    destination: (req,file,cb) => {
-        cb(null,DIR);
-    },
-    filename: function (req, file, cb) {
-    const original = file.originalname.replace(/\s+/g, '_'); // replace spaces
-    const uniqueName = `${new Date().toISOString().replace(/[:.]/g, '-')}_${original}`;
-    cb(null, uniqueName);
-  }
-});
     const upload = multer({
         storage,
         limits: {fileSize: 150 * 1024 * 1024 } //150 MB
     });
 
+    const currentTimestamp = new Date();
 
 
 router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => {
@@ -169,19 +120,22 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
       created_by
     } = req.body;
 
-    let docFilenames = [];
+    let docFilename = [];
 
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const { originalname, filename, mimetype, size } = file;
-        docFilenames.push(filename);
+        const { mimetype, originalname, filename } = file;
+        const filePath = path.join(DIR, filename);
+        docFilename.push(filename)
 
         await knex('upload_master').insert({
-          original_name: originalname,
-          stored_name: filename,
-          mime_type: mimetype,
-          size: size,
-          upload_date: currentTimestamp
+          upload_type: mimetype,
+          file_path: filePath,
+          file_name: originalname,
+          upload_date: currentTimestamp,
+          upload_by: created_by,
+          updated_by: created_by,
+          updated_at: currentTimestamp
         });
       }
     }
@@ -193,7 +147,7 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
       date_Time,
       comm_Venue,
       comm_Guest,
-      comm_Docs: docFilenames.join(','),
+      comm_Docs: docFilename.join(','), // matches upload_master.comm_Docs
       comm_Emps,
       comm_Benef,
       created_by,
@@ -206,6 +160,73 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
   } catch (err) {
     console.error('Error in backend:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+    // FETCH ALL VALUES VIA REQUEST_ID
+    router.get('/editform', async (req, res, next) => {
+  try {
+        const getRequest = await Requests.findAll({
+            where:{
+                request_id: req.query.id
+            }
+        })
+        console.log(getRequest)
+        res.json(getRequest[0]);
+  }catch(err){
+    
+  }
+
+});
+
+router.post('/updateform',upload.array('comm_Docs'), async (req, res) => {
+
+
+    const {
+      created_by
+    } = req.body;
+  
+     let docFilenames = [];
+    console.log('createdby value: ', created_by)
+  if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const { originalname, filename, mimetype, } = file;
+        docFilenames.push(filename);
+        const filePath = path.join(DIR, filename);
+      
+        await knex('upload_master').insert({
+          upload_type: mimetype,
+          file_path: filePath,
+          file_name: originalname,
+          upload_date: currentTimestamp,
+          upload_by: created_by,
+          updated_by: 'asdasd',
+          updated_at: currentTimestamp
+        });
+      }
+    }
+    
+
+  try {
+    await knex('request_master')
+      .where({ request_id: req.body.request_id })
+      .update({
+        request_status: req.body.request_status,
+        comm_Area: req.body.comm_Area,
+        comm_Act: req.body.comm_Act,
+        date_Time: req.body.date_Time,
+        comm_Venue: req.body.comm_Venue,
+        comm_Guest: req.body.comm_Guest,
+        comm_Docs: docFilenames.join(','),
+        comm_Emps: req.body.comm_Emps,
+        comm_Benef: req.body.comm_Benef,
+        updated_by: created_by,
+        updated_at: currentTimestamp
+      });
+
+    res.status(200).json({ message: 'Request updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update request' });
   }
 });
 
