@@ -21,10 +21,15 @@ export default function ViewForm() {
       });
     }
   }, [requestID]);
+  
+  const handleback = () => {
+    window.location.replace(`${config.baseUrl}/comrel/history`);
+  }
 
   return (
     <div style={{ padding: "20px" }}>
       <h2>Request ID: {requestID}</h2>
+      <button onClick={handleback}>back</button>
       {formData ? (
         <div>
           <h3>Status: {formData.request_status}</h3>

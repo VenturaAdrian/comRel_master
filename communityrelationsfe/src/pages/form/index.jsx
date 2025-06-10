@@ -20,6 +20,10 @@ export default function AddForm() {
     }
   }, []);
 
+  const handleBack = () => {
+    window.location.replace(`${config.baseUrl}/comrel/dashboard`);
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -89,6 +93,7 @@ export default function AddForm() {
         </div>
         <button type="submit">Submit</button>
       </form>
+      <div><button onClick={handleBack}>Home</button></div>
     </div>
   );
 }

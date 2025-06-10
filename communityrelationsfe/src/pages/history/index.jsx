@@ -36,7 +36,9 @@ const params = new URLSearchParams({
 window.location.replace(`/comrel/viewform?${params.toString()}`);
 
 }
-
+const handleback = () => {
+  window.location.replace(`${config.baseUrl}/comrel/dashboard`);
+}
 
 
 
@@ -44,6 +46,7 @@ window.location.replace(`/comrel/viewform?${params.toString()}`);
    return (
   <div style={{ padding: '20px' }}>
     <h2>Request History</h2>
+    <button onClick={handleback}>Home</button>
     <table style={{
       width: '100%',
       borderCollapse: 'collapse',
