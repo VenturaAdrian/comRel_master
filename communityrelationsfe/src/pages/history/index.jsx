@@ -40,6 +40,13 @@ const handleback = () => {
   window.location.replace(`${config.baseUrl}/comrel/dashboard`);
 }
 
+const handleReview = (item) => {
+  const params = new URLSearchParams({
+  id: item.request_id,
+});
+window.location.replace(`/comrel/review?${params.toString()}`);
+}
+
 
 
 
@@ -65,6 +72,7 @@ const handleback = () => {
           <th style={thStyle}>Emps</th>
           <th style={thStyle}>Beneficiaries</th>
           <th style={thStyle}>Created By</th>
+
         {userPosition !== "encoder" && <th style={thStyle}>Action</th>}
          {userPosition !== "encoder" && <th style={thStyle}>Comment</th>}
         </tr>
@@ -88,8 +96,7 @@ const handleback = () => {
               <button onClick={() => handleView(item)}>View</button>
             </td>}
             {userPosition !== "encoder" &&<td style={tdStyle}>
-              <input>
-              </input>
+              <button onClick={() => handleReview(item)}>REVIEW</button>
             </td>}
           </tr>
         ))}

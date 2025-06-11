@@ -13,11 +13,18 @@ export default function AddForm() {
   const [commBenef, setCommBenef] = useState('');
   const [createdby, setCreatedBy] = useState('');
 
+  const [commentid, setCommentId] = useState('');
+  const [comment, setComment] = useState([]);
+
+
+
   useEffect(() => {
     const empInfo = JSON.parse(localStorage.getItem('user'));
     if (empInfo?.user_name) {
       setCreatedBy(empInfo.user_name);
     }
+
+    
   }, []);
 
   const handleBack = () => {

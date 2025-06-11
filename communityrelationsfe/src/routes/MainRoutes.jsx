@@ -10,6 +10,7 @@ const AddForm = lazy(() => import('../pages/form/index'));
 const History = lazy(() => import('../pages/history/index'));
 const EditForm = lazy(() => import('../pages/form/editForm'));
 const ViewForm = lazy(() => import('../pages/form/view'));
+const Review = lazy(() => import('../pages/form/review'));
 const TEST = lazy(() => import('../pages/testpafe'));
 
 
@@ -50,6 +51,10 @@ const MainRoutes = {
         {
             path: 'viewform',
             element: <ViewForm/>
+        },
+        {
+            path: 'review',
+            element: <Review/>
         }
     ]
 }

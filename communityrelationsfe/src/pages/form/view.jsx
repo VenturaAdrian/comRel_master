@@ -7,6 +7,7 @@ export default function ViewForm() {
   const requestID = params.get("id");
 
   const [formData, setFormData] = useState(null);
+    const [comments, setComments] = useState([]);
 
   useEffect(() => {
     if (requestID) {
@@ -19,6 +20,15 @@ export default function ViewForm() {
       .catch(error => {
         console.error("Error fetching request data:", error);
       });
+
+      axios.get(`${config.baseApi1}/request/comment/${requestID}`)
+        .then(response => {
+          setComments(response.data);
+        })
+        .catch(error => {
+          console.error("Error fetching comments:", error);
+        });
+
     }
   }, [requestID]);
   
@@ -76,6 +86,21 @@ export default function ViewForm() {
       ) : (
         <p>Loading request data...</p>
       )}
+      <div>
+        <h3>All Comments</h3>
+            {comments.length > 0 ? (
+              <ul>
+                {comments.map((cmt) => (
+                  <li key={cmt.comment_id} style={{ marginBottom: '10px' }}>
+                    <strong>{cmt.created_by}</strong> ({new Date(cmt.created_at).toLocaleString()}):<br />
+                    {cmt.comment}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No comments yet.</p>
+            )}
+      </div>
     </div>
   );
 }

@@ -61,6 +61,15 @@ require('dotenv').config();
         },
         comm_Benef:{
             type:DataTypes.STRING,
+        },
+        created_by:{
+          type:DataTypes.STRING,
+        },
+        created_at:{
+          type:DataTypes.STRING
+        },
+        comment_id:{
+          type:DataTypes.STRING
         }
     },{
         freezeTableName: false,
@@ -117,7 +126,8 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
       comm_Guest,
       comm_Emps,
       comm_Benef,
-      created_by
+      created_by,
+      comment_id
     } = req.body;
 
     let docFilename = [];
@@ -150,6 +160,7 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
       comm_Docs: docFilename.join(','), // matches upload_master.comm_Docs
       comm_Emps,
       comm_Benef,
+      comment_id: '',
       created_by,
       created_at: currentTimestamp,
       updated_by: '',
@@ -231,5 +242,88 @@ router.post('/updateform',upload.array('comm_Docs'), async (req, res) => {
 });
 
 
+const Comments = db.define('comment_master',{
+        comment_id:{
+            type:DataTypes.INTEGER,
+            primaryKey: true
+        },
+        comment:{
+          type:DataTypes.STRING
+        },
+        created_by:{
+          type:DataTypes.STRING
+        },
+        created_at:{
+          type:DataTypes.STRING
+        },
+        request_id:{
+          type: DataTypes.INTEGER
+        }
+    },{
+        freezeTableName: false,
+        timestamps: false,
+        createdAt: false,
+        updatedAt: false,
+        tableName: 'request_master'
+    })
+
+  // GET comments for a specific request
+router.get('/comment/:request_id', async (req, res) => {
+  try {
+    const request_id = req.params.request_id;
+    const comments = await knex('comment_master')
+      .where({ request_id })
+      .orderBy('created_at', 'desc');
+    res.json(comments);
+  } catch (err) {
+    console.error('Error fetching comments:', err);
+    res.status(500).json({ message: 'Failed to fetch comments' });
+  }
+});
+
+// POST a new comment
+router.post('/comment', async (req, res) => {
+  try {
+    const { comment, created_by, request_id } = req.body;
+    const created_at = new Date();
+
+    await knex('comment_master').insert({
+      comment,
+      created_by,
+      created_at,
+      request_id
+    });
+
+    res.status(200).json({ message: 'Comment added successfully' });
+  } catch (err) {
+    console.error('Error adding comment:', err);
+    res.status(500).json({ message: 'Failed to add comment' });
+  }
+});
+
+
+router.post('/comment-decline', async function (req, res, next) {
+  const currentTimestamp = new Date();
+  const {
+    request_status,
+    request_id,
+    currentUser
+  } = req.body;
+
+  try {
+    await knex('request_master')
+      .where({ request_id: request_id })
+      .update({
+        request_status,
+        updated_by: currentUser,
+        updated_at: currentTimestamp
+      });
+
+    res.status(200).json({ message: 'Request status updated successfully' });
+  } catch (err) {
+    console.error('Error updating request status:', err);
+    res.status(500).json({ message: 'Failed to update request status' });
+  }
+});
 
 module.exports = router;
