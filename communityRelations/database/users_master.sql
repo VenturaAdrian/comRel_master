@@ -1,7 +1,7 @@
 USE [comrel_master]
 GO
 
-/****** Object:  Table [dbo].[users_master]    Script Date: 05/06/2025 3:39:24 pm ******/
+/****** Object:  Table [dbo].[users_master]    Script Date: 11/06/2025 3:45:05 pm ******/
 SET ANSI_NULLS ON
 GO
 
