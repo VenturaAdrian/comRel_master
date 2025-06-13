@@ -241,6 +241,24 @@ router.post('/updateform',upload.array('comm_Docs'), async (req, res) => {
   }
 });
 
+router.get('/delete-request', async(req,res,next) => {
+    try{
+        const request_id = req.query.id;
+
+        if(!request_id){
+          return res.status(400).json({error: 'Request ID is required'});
+        }
+
+        await knex('comment_master').where({request_id}).del();
+        await knex('request_master').where({request_id}).del();
+
+        res.status(200).json({message: 'Request deleted successfully'});
+    }catch(err){
+      console.error(err);
+      res.status(500).json({error: ' Failed to delete the request'})
+    }
+})
+
 
 const Comments = db.define('comment_master',{
         comment_id:{

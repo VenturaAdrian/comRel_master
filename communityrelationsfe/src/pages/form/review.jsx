@@ -9,7 +9,11 @@ export default function Review() {
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState([]);
   const [currentUser, setCurrentUser] = useState('');
-    const [showComments, setShowComments] = useState(false);
+
+  const [showComments, setShowComments] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+
   // Get form data + comments
   useEffect(() => {
     const fetchData = async () => {
@@ -84,6 +88,23 @@ const handleCommentSubmit = async (e) => {
     setShowComments(true); // Show comments and input
   }
 
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);  
+  }
+
+  const confirmDelete = async () => {
+    try{
+      await axios.get(`${config.baseApi1}/request/delete-request`,{
+        params: {id: requestID}
+      })
+      alert("Request deleted successfully.");
+      window.location.replace(`${config.baseUrl}/comrel/history`);
+    }catch(err){
+      console.error('Failed to delete request:', err);
+      alert('Failed to delete this request')
+    }
+  }
+
   return (
      <div>
       <h2>Review Page</h2>
@@ -140,8 +161,16 @@ const handleCommentSubmit = async (e) => {
       </div>
       <div>
         <button onClick={handleDecline}>DECLINE</button>
+        <button onClick={handleDelete} >DELETE</button>
         <button>ACCEPT</button>
       </div>
+      {showDeleteConfirm && (
+        <div style={{ marginTop: '10px', backgroundColor: '#eee', padding: '10px', border: '1px solid #ccc' }}>
+          <p>Are you sure you want to delete this request?</p>
+          <button onClick={confirmDelete}>Yes</button>
+          <button onClick={() => setShowDeleteConfirm(false)}>No</button>
+        </div>
+      )}
     </div>
   );
 }

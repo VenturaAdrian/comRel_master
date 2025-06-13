@@ -11,6 +11,7 @@ const History = lazy(() => import('../pages/history/index'));
 const EditForm = lazy(() => import('../pages/form/editForm'));
 const ViewForm = lazy(() => import('../pages/form/view'));
 const Review = lazy(() => import('../pages/form/review'));
+const Viewallreviewed = lazy(()=> import('../pages/form/viewallreviewed'));
 const TEST = lazy(() => import('../pages/testpafe'));
 
 
@@ -55,6 +56,10 @@ const MainRoutes = {
         {
             path: 'review',
             element: <Review/>
+        },
+        {
+            path: 'allreviewed',
+            element: <Viewallreviewed/>
         }
     ]
 }
