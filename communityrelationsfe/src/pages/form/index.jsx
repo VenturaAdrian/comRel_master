@@ -13,9 +13,6 @@ export default function AddForm() {
   const [commBenef, setCommBenef] = useState('');
   const [createdby, setCreatedBy] = useState('');
 
-  const [commentid, setCommentId] = useState('');
-  const [comment, setComment] = useState([]);
-
 
 
   useEffect(() => {

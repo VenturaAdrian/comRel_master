@@ -43,6 +43,7 @@ export default function DashboardDeafult() {
         <button onClick={handleHistory}>
             History 
         </button>
+
      </div>   
     )
     

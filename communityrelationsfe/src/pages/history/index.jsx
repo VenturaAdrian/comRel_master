@@ -73,8 +73,7 @@ window.location.replace(`/comrel/review?${params.toString()}`);
           <th style={thStyle}>Beneficiaries</th>
           <th style={thStyle}>Created By</th>
 
-        {userPosition !== "encoder" && <th style={thStyle}>Action</th>}
-         {userPosition !== "encoder" && <th style={thStyle}>Comment</th>}
+        {userPosition !== "encoder"  && <th style={thStyle}>Action</th>}
         </tr>
       </thead>
       <tbody>
@@ -91,8 +90,11 @@ window.location.replace(`/comrel/review?${params.toString()}`);
             <td style={tdStyle}>{item.comm_Emps}</td>
             <td style={tdStyle}>{item.comm_Benef}</td>
             <td style={tdStyle}>{item.created_by}</td>
-            {userPosition !== "encoder" &&<td style={tdStyle}>
+            <button onClick={() => handleEdit(item)}>Edit</button>
+            <button onClick={() => handleView(item)}>View</button>
+            {userPosition !== "encoder" && item.request_status === "Reviewed" &&<td style={tdStyle}>
               <button onClick={() => handleEdit(item)}>Edit</button>
+           
               <button onClick={() => handleView(item)}>View</button>
             </td>}
             {userPosition !== "encoder" &&<td style={tdStyle}>

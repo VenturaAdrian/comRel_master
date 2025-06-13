@@ -111,7 +111,7 @@ require('dotenv').config();
         limits: {fileSize: 150 * 1024 * 1024 } //150 MB
     });
 
-    const currentTimestamp = new Date();
+    const currentTimestamp = new Date().toISOString();
 
 
 router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => {
@@ -184,60 +184,64 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
         console.log(getRequest)
         res.json(getRequest[0]);
   }catch(err){
-    
+    console.error('Error fetching edit form data:', err);
+    res.status(500).json({ error: 'Failed to fetch request' });
   }
 
 });
 
-router.post('/updateform',upload.array('comm_Docs'), async (req, res) => {
-
+router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
+  try {
+    console.log("Received Data:", req.body);
 
     const {
-      created_by
+      request_id,
+      created_by,
+      request_status,
+      comm_Area,
+      comm_Act,
+      date_Time,
+      comm_Venue,
+      comm_Guest,
+      comm_Emps,
+      comm_Benef,
     } = req.body;
-  
-     let docFilenames = [];
-    console.log('createdby value: ', created_by)
-  if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const { originalname, filename, mimetype, } = file;
-        docFilenames.push(filename);
-        const filePath = path.join(DIR, filename);
-      
-        await knex('upload_master').insert({
-          upload_type: mimetype,
-          file_path: filePath,
-          file_name: originalname,
-          upload_date: currentTimestamp,
-          upload_by: created_by,
-          updated_by: 'asdasd',
-          updated_at: currentTimestamp
-        });
-      }
-    }
-    
 
-  try {
+    // Validate required fields
+    if (!request_id || !created_by) {
+      console.error("Missing required parameters");
+      return res.status(400).json({ error: "Missing request_id or created_by" });
+    }
+
+    // Ensure `created_by` is always a valid string (handles arrays)
+    const updatedByValue = Array.isArray(created_by) ? created_by[0] : String(created_by || 'Unknown');
+
+    // Handle file uploads correctly
+    const docFilenames = req.files?.map(file => file.filename) || [];
+
+    // Execute database update
     await knex('request_master')
-      .where({ request_id: req.body.request_id })
+      .where({ request_id })
       .update({
-        request_status: req.body.request_status,
-        comm_Area: req.body.comm_Area,
-        comm_Act: req.body.comm_Act,
-        date_Time: req.body.date_Time,
-        comm_Venue: req.body.comm_Venue,
-        comm_Guest: req.body.comm_Guest,
-        comm_Docs: docFilenames.join(','),
-        comm_Emps: req.body.comm_Emps,
-        comm_Benef: req.body.comm_Benef,
-        updated_by: created_by,
-        updated_at: currentTimestamp
+        request_status,
+        comm_Area,
+        comm_Act,
+        date_Time,
+        comm_Venue,
+        comm_Guest,
+        comm_Docs: docFilenames.length > 0 ? docFilenames.join(',') : knex.raw('comm_Docs'), // Keep existing documents if none are uploaded
+        comm_Emps,
+        comm_Benef,
+        updated_by: updatedByValue, // Ensure `created_by` is stored as a string
+        updated_at: new Date(),
       });
 
-    res.status(200).json({ message: 'Request updated successfully' });
+    console.log("Update successful:", request_id);
+    res.status(200).json({ message: "Request updated successfully" });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to update request' });
+    console.error("Database Update Error:", err);
+    res.status(500).json({ error: "Failed to update request", details: err.message });
   }
 });
 
@@ -282,7 +286,7 @@ const Comments = db.define('comment_master',{
         timestamps: false,
         createdAt: false,
         updatedAt: false,
-        tableName: 'request_master'
+        tableName: 'comment_master'
     })
 
   // GET comments for a specific request
