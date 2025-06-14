@@ -12,7 +12,7 @@ export default function Review() {
 
   const [showComments, setShowComments] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
+  
 
   // Get form data + comments
   useEffect(() => {
@@ -105,8 +105,31 @@ const handleCommentSubmit = async (e) => {
     }
   }
 
-  return (
-     <div>
+
+  const handleAccept = async () => {
+  try {
+    const res = await axios.post(`${config.baseApi1}/request/accept`, {
+      request_status: 'Accepted',
+      request_id: requestID,
+      currentUser: currentUser
+    });
+
+    alert(res.data.message || "Request accepted successfully.");
+    
+    // Refresh form data
+    const requestRes = await axios.get(`${config.baseApi1}/request/editform`, {
+      params: { id: requestID }
+    });
+    setFormData(requestRes.data);
+    
+  } catch (error) {
+    console.error('Failed to accept request:', error);
+    alert('Failed to accept this request.');
+  }
+};
+
+   return (
+    <div>
       <h2>Review Page</h2>
 
       {formData ? (
@@ -120,40 +143,81 @@ const handleCommentSubmit = async (e) => {
           <h3>Guests: {formData.comm_Guest}</h3>
           <h3>Employees: {formData.comm_Emps}</h3>
           <h3>Beneficiaries: {formData.comm_Benef}</h3>
+          {formData.comm_Docs && (
+                      <div>
+                        <h3>Supporting Documents:</h3>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+                          {formData.comm_Docs.split(',').map((file, index) => {
+                            const fileTrimmed = file.trim();
+                            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileTrimmed);
+                            
+                            const fileUrl = `${config.baseApi1}/files/${fileTrimmed}`;
+                            const fileUrl1 = `${config.baseApi1}/files/request_${formData.request_id}/images/${fileTrimmed}`;
+                            
+                            const subfolder = isImage ? 'images' : 'documents';
+                           const finalurl1 = `${config.baseApi1}/files/request_${formData.request_id}/${subfolder}/${fileTrimmed}` || `${config.baseApi1}/files/${fileTrimmed}`;
+                            
+                           const primaryUrl = `${config.baseApi1}/files/request_${formData.request_id}/${isImage ? 'images' : 'documents'}/${fileTrimmed}`;
+                            const fallbackUrl = `${config.baseApi1}/files/${fileTrimmed}`;
+
+                            
+
+                            return (
+                              <div key={index} style={{ width: '200px' }}>
+                                {isImage ? (
+                                  <img
+                                    src={imgSrc}
+                                    alt={`Document ${index + 1}`}
+                                    onError={()=> setImgSrc(fileUrl)}
+                                    style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                                  />
+                                ) : (
+                                  <iframe
+                                    src={fileUrl}
+                                    width="100%"
+                                    height="200px"
+                                    title={`Document ${index + 1}`}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
         </div>
       ) : (
         <p>Loading request data...</p>
       )}
 
-      {/* Conditionally render comment section */}
-      {showComments && (
-        <>
-          <div>
-            <label>Comment / Feedback</label>
-            <input
-              type="text"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-            <button onClick={handleCommentSubmit}>Submit Comment</button>
-          </div>
+      {/* All comments always visible */}
+      <div>
+        <h3>All Comments</h3>
+        {comments.length > 0 ? (
+          <ul>
+            {comments.map((cmt) => (
+              <li key={cmt.comment_id}>
+                <strong>{cmt.created_by}</strong> ({new Date(cmt.created_at).toLocaleString()}):<br />
+                {cmt.comment}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No comments yet.</p>
+        )}
+      </div>
 
-          <div>
-            <h3>All Comments</h3>
-            {comments.length > 0 ? (
-              <ul>
-                {comments.map((cmt) => (
-                  <li key={cmt.comment_id}>
-                    <strong>{cmt.created_by}</strong> ({new Date(cmt.created_at).toLocaleString()}):<br />
-                    {cmt.comment}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No comments yet.</p>
-            )}
-          </div>
-        </>
+      {/* Show comment input only when declining */}
+      {showComments && (
+        <div>
+          <label>Comment / Feedback</label>
+          <input
+            type="text"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
+          <button onClick={handleCommentSubmit}>Submit Comment</button>
+        </div>
       )}
 
       <div>
@@ -161,9 +225,10 @@ const handleCommentSubmit = async (e) => {
       </div>
       <div>
         <button onClick={handleDecline}>DECLINE</button>
-        <button onClick={handleDelete} >DELETE</button>
-        <button>ACCEPT</button>
+        <button onClick={handleDelete}>DELETE</button>
+        <button onClick={handleAccept}>ACCEPT</button>
       </div>
+
       {showDeleteConfirm && (
         <div style={{ marginTop: '10px', backgroundColor: '#eee', padding: '10px', border: '1px solid #ccc' }}>
           <p>Are you sure you want to delete this request?</p>

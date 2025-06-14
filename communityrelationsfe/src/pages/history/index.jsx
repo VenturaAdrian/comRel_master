@@ -6,11 +6,16 @@ export default function History() {
 
     const [historyData, setHistoryData] = useState([]);
     const [userPosition, setUserPosition] = useState('');
+    const [reqStatus, setReqStatus] = useState('');
 
     useEffect(() =>{
         axios.get(`${config.baseApi1}/request/history`)
         .then(response => {
             setHistoryData(response.data);
+            setReqStatus(response.data.request_status);
+
+            const allStatuses = response.data.map(item => item.request_status);
+            console.log(allStatuses)
         })
         .catch(error => {
             console.error('ERROR FETCHING FE:', error);
@@ -18,6 +23,8 @@ export default function History() {
 
         const empInfo = JSON.parse(localStorage.getItem('user'));
         setUserPosition(empInfo.emp_position)
+        
+       
     },[])
 
     const handleEdit = (item) => {
@@ -43,6 +50,7 @@ const handleback = () => {
 const handleReview = (item) => {
   const params = new URLSearchParams({
   id: item.request_id,
+  
 });
 window.location.replace(`/comrel/review?${params.toString()}`);
 }
@@ -73,7 +81,9 @@ window.location.replace(`/comrel/review?${params.toString()}`);
           <th style={thStyle}>Beneficiaries</th>
           <th style={thStyle}>Created By</th>
 
-        {userPosition !== "encoder"  && <th style={thStyle}>Action</th>}
+        {userPosition !== "encoder" || historyData.some(item => item.request_status === "Reviewed") && (
+        <th style={thStyle}>Action</th>
+        )}
         </tr>
       </thead>
       <tbody>
@@ -90,9 +100,9 @@ window.location.replace(`/comrel/review?${params.toString()}`);
             <td style={tdStyle}>{item.comm_Emps}</td>
             <td style={tdStyle}>{item.comm_Benef}</td>
             <td style={tdStyle}>{item.created_by}</td>
-            <button onClick={() => handleEdit(item)}>Edit</button>
-            <button onClick={() => handleView(item)}>View</button>
-            {userPosition !== "encoder" && item.request_status === "Reviewed" &&<td style={tdStyle}>
+
+            {userPosition !== "encoder" || item.request_status === "Reviewed" &&
+            <td style={tdStyle}>
               <button onClick={() => handleEdit(item)}>Edit</button>
            
               <button onClick={() => handleView(item)}>View</button>

@@ -5,6 +5,8 @@ var Sequelize = require('sequelize');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');                // <== Needed for fs.existsSync
+const fsp = require('fs/promises');
 require('dotenv').config();
 
     var knex = require("knex")({
@@ -85,6 +87,7 @@ require('dotenv').config();
         const data = await knex('request_master').select('*'); 
         res.json(data)
         console.log(data)
+        data.forEach(row => console.log(row.request_status));
       }catch(err){
         console.error('ERROR FETCHING:', err);
         res.status(500).json({error: 'Failed fetch data'})
@@ -127,7 +130,6 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
       comm_Emps,
       comm_Benef,
       created_by,
-      comment_id
     } = req.body;
 
     let docFilename = [];
@@ -345,6 +347,68 @@ router.post('/comment-decline', async function (req, res, next) {
   } catch (err) {
     console.error('Error updating request status:', err);
     res.status(500).json({ message: 'Failed to update request status' });
+  }
+});
+
+router.post('/accept', async (req, res, next) => {
+  const currentTimestamp = new Date();
+  const { request_status, request_id, currentUser } = req.body;
+
+  try {
+    
+    const [requestData] = await knex('request_master')
+      .select('comm_Docs')
+      .where({ request_id });
+
+    if (!requestData) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    const filenames = requestData.comm_Docs
+      ? requestData.comm_Docs.split(',').map(f => f.trim()).filter(f => f)
+      : [];
+
+    const baseDir = path.join('./uploads', `request_${request_id}`);
+    const imagesDir = path.join(baseDir, 'images');
+    const docsDir = path.join(baseDir, 'documents');
+
+    await fsp.mkdir(imagesDir, { recursive: true });
+    await fsp.mkdir(docsDir, { recursive: true });
+
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
+    for (const file of filenames) {
+      const ext = path.extname(file).toLowerCase();
+      const srcPath = path.join('./uploads', file);
+      const destFolder = imageExtensions.includes(ext) ? imagesDir : docsDir;
+      const destPath = path.join(destFolder, file);
+
+      try {
+        if (fs.existsSync(srcPath)) {
+          await fsp.rename(srcPath, destPath);
+          console.log(`Moved file: ${file}`);
+        } else {
+          console.warn(`Skipping missing file: ${srcPath}`);
+        }
+      } catch (moveErr) {
+        console.error(`Failed to move file ${file}:`, moveErr);
+        continue;
+      }
+    }
+
+    await knex('request_master')
+      .where({ request_id })
+      .update({
+        request_status,
+        updated_by: currentUser,
+        updated_at: currentTimestamp
+      });
+
+    res.status(200).json({ message: 'Request accepted and files categorized successfully.' });
+
+  } catch (err) {
+    console.error('Error during accept process:', err);
+    res.status(500).json({ message: 'Failed to accept request', error: err.message });
   }
 });
 

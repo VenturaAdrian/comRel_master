@@ -24,6 +24,7 @@ export default function ViewForm() {
       axios.get(`${config.baseApi1}/request/comment/${requestID}`)
         .then(response => {
           setComments(response.data);
+          
         })
         .catch(error => {
           console.error("Error fetching comments:", error);
