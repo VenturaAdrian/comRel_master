@@ -154,7 +154,6 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
 
     let docFilename = [];
 
-    // 1. Insert the request first
     const [newRequest] = await knex('request_master')
       .insert({
         request_status: 'request',
@@ -176,7 +175,7 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
 
     const request_id = newRequest.request_id || newRequest; // for MSSQL compatibility
 
-    let uploadIdToSave = null;
+    let uploadIdToSave = [];
 
     if (req.files && req.files.length > 0) {
       for (let i = 0; i < req.files.length; i++) {
@@ -196,13 +195,10 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
             updated_by: created_by,
             updated_at: currentTimestamp
           })
-          .returning('id_number');
+          .returning('upload_id');
 
-        const id_number = upload.id_number || upload;
-
-        if (i === 0) {
-          uploadIdToSave = id_number;
-        }
+        const upload_id = upload.upload_id || upload;
+          uploadIdToSave.push(upload_id);
       }
 
       // 2. Update the request_master with file list + upload_id of first file
@@ -210,7 +206,7 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
         .where({ request_id })
         .update({
           comm_Docs: docFilename.join(','),
-          upload_id: uploadIdToSave,
+          upload_id: uploadIdToSave.join(','),
           updated_at: currentTimestamp
         });
     }
