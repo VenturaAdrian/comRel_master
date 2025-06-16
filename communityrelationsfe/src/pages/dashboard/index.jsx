@@ -30,6 +30,14 @@ export default function DashboardDeafult() {
             
         }
 
+        const handleReports = () => {
+            window.location.replace(`${config.baseUrl}/comrel/reports`);
+        }
+
+        const handleToBePosted = () => {
+            window.location.replace(`${config.baseUrl}/comrel/tobeposted`);
+        }
+
     return(
      <div>
         <text>'WELCOME' {empInfo.first_name}{empInfo.last_name}</text>
@@ -42,6 +50,12 @@ export default function DashboardDeafult() {
         </button>
         <button onClick={handleHistory}>
             History 
+        </button>
+        <button onClick={handleReports}>
+            Reports 
+        </button>
+        <button onClick={handleToBePosted}>
+            To Be Posted
         </button>
 
      </div>   

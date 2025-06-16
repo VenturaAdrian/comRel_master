@@ -116,6 +116,16 @@ require('dotenv').config();
 
     const currentTimestamp = new Date().toISOString();
 
+router.get('/fetch', async (req, res) => {
+  try {
+    const data = await knex('request_master').select('*');
+    res.json(data);
+  } catch (err) {
+    console.error('Error fetching all requests:', err);
+    res.status(500).json({ message: 'Failed to fetch requests' });
+  }
+});    
+
 
 router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => {
   const currentTimestamp = new Date();
@@ -129,18 +139,42 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
       comm_Guest,
       comm_Emps,
       comm_Benef,
-      created_by,
+      created_by
     } = req.body;
 
     let docFilename = [];
 
+    // First, insert the request and get the generated request_id
+    const [newRequest] = await knex('request_master')
+      .insert({
+        request_status: 'request',
+        comm_Area,
+        comm_Act,
+        date_Time,
+        comm_Venue,
+        comm_Guest,
+        comm_Docs: '', // temporary, updated later
+        comm_Emps,
+        comm_Benef,
+        comment_id: '',
+        created_by,
+        created_at: currentTimestamp,
+        updated_by: '',
+        updated_at: currentTimestamp
+      })
+      .returning('request_id'); // <- get the generated request_id
+
+    const request_id = newRequest.request_id || newRequest; // handle SQL Server returning format
+
+    // Then insert files linked to that request_id
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const { mimetype, originalname, filename } = file;
         const filePath = path.join(DIR, filename);
-        docFilename.push(filename)
+        docFilename.push(filename);
 
         await knex('upload_master').insert({
+          request_id: request_id,
           upload_type: mimetype,
           file_path: filePath,
           file_name: originalname,
@@ -150,26 +184,17 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
           updated_at: currentTimestamp
         });
       }
+
+      // Update the comm_Docs field in request_master with the list of filenames
+      await knex('request_master')
+        .where({ request_id })
+        .update({
+          comm_Docs: docFilename.join(','),
+          updated_at: currentTimestamp
+        });
     }
 
-    await knex('request_master').insert({
-      request_status: 'request',
-      comm_Area,
-      comm_Act,
-      date_Time,
-      comm_Venue,
-      comm_Guest,
-      comm_Docs: docFilename.join(','), // matches upload_master.comm_Docs
-      comm_Emps,
-      comm_Benef,
-      comment_id: '',
-      created_by,
-      created_at: currentTimestamp,
-      updated_by: '',
-      updated_at: currentTimestamp
-    });
-
-    res.status(200).json({ message: 'Request added successfully' });
+    res.status(200).json({ message: 'Request added successfully', request_id });
   } catch (err) {
     console.error('Error in backend:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -249,13 +274,15 @@ router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
 
 router.get('/delete-request', async(req,res,next) => {
     try{
-        const request_id = req.query.id;
-
+        const request_id = req.query.request_id;
         if(!request_id){
           return res.status(400).json({error: 'Request ID is required'});
         }
+       
+      await knex('upload_master').where({request_id}).del();
 
         await knex('comment_master').where({request_id}).del();
+        
         await knex('request_master').where({request_id}).del();
 
         res.status(200).json({message: 'Request deleted successfully'});

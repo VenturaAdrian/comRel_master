@@ -12,6 +12,8 @@ const EditForm = lazy(() => import('../pages/form/editForm'));
 const ViewForm = lazy(() => import('../pages/form/view'));
 const Review = lazy(() => import('../pages/form/review'));
 const Viewallreviewed = lazy(()=> import('../pages/form/viewallreviewed'));
+const Reports = lazy(() => import('../pages/dashboard/reports'));
+const ToBePosted = lazy(() => import('../pages/dashboard/tobeposted'));
 const TEST = lazy(() => import('../pages/testpafe'));
 
 
@@ -60,6 +62,14 @@ const MainRoutes = {
         {
             path: 'allreviewed',
             element: <Viewallreviewed/>
+        },
+        {
+            path: 'reports',
+            element: <Reports/>
+        },
+        {
+            path: 'tobeposted',
+            element: <ToBePosted/>
         }
     ]
 }

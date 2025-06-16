@@ -93,9 +93,13 @@ const handleCommentSubmit = async (e) => {
   }
 
   const confirmDelete = async () => {
+
     try{
       await axios.get(`${config.baseApi1}/request/delete-request`,{
-        params: {id: requestID}
+        params: {request_id: requestID, 
+          comm_Docs: formData.comm_Docs,
+          
+        }
       })
       alert("Request deleted successfully.");
       window.location.replace(`${config.baseUrl}/comrel/history`);
@@ -153,22 +157,17 @@ const handleCommentSubmit = async (e) => {
                             
                             const fileUrl = `${config.baseApi1}/files/${fileTrimmed}`;
                             const fileUrl1 = `${config.baseApi1}/files/request_${formData.request_id}/images/${fileTrimmed}`;
-                            
-                            const subfolder = isImage ? 'images' : 'documents';
-                           const finalurl1 = `${config.baseApi1}/files/request_${formData.request_id}/${subfolder}/${fileTrimmed}` || `${config.baseApi1}/files/${fileTrimmed}`;
-                            
-                           const primaryUrl = `${config.baseApi1}/files/request_${formData.request_id}/${isImage ? 'images' : 'documents'}/${fileTrimmed}`;
-                            const fallbackUrl = `${config.baseApi1}/files/${fileTrimmed}`;
-
-                            
 
                             return (
                               <div key={index} style={{ width: '200px' }}>
                                 {isImage ? (
                                   <img
-                                    src={imgSrc}
+                                    src={fileUrl}
                                     alt={`Document ${index + 1}`}
-                                    onError={()=> setImgSrc(fileUrl)}
+                                    onError={(e)=> {
+                                      e.target.onerror = null; 
+                                      e.target.src = fileUrl1;
+                                    }}
                                     style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
                                   />
                                 ) : (
