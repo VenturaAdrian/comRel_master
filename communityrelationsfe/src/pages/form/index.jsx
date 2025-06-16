@@ -13,27 +13,21 @@ export default function AddForm() {
   const [commBenef, setCommBenef] = useState('');
   const [createdby, setCreatedBy] = useState('');
 
-
-
   useEffect(() => {
     const empInfo = JSON.parse(localStorage.getItem('user'));
     if (empInfo?.user_name) {
       setCreatedBy(empInfo.user_name);
     }
-    
-    
   }, []);
 
   const handleBack = () => {
     window.location.replace(`${config.baseUrl}/comrel/dashboard`);
-  }
-
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const formData = new FormData();
-    
     formData.append('comm_Area', commArea);
     formData.append('comm_Act', commAct);
     formData.append('date_Time', dateTime);
@@ -42,9 +36,6 @@ export default function AddForm() {
     formData.append('comm_Emps', commEmps);
     formData.append('comm_Benef', commBenef);
     formData.append('created_by', createdby);
-
-  
-
 
     for (let i = 0; i < commDocs.length; i++) {
       formData.append('comm_Docs', commDocs[i]);
@@ -55,33 +46,9 @@ export default function AddForm() {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        
       });
+
       console.log("Response:", response.data);
-
-      // Then fetch all request data
-    const res = await axios.get(`${config.baseApi1}/request/fetch`);
-
-    // Match the most recent item with the same fields
-    const matchedRequest = res.data.find((item) =>
-      item.comm_Area === commArea &&
-      item.comm_Act === commAct &&
-      item.date_Time === dateTime &&
-      item.comm_Venue === commVenue &&
-      item.comm_Guest === commGuest &&
-      item.comm_Emps === commEmps &&
-      item.comm_Benef === commBenef &&
-      item.created_by === createdby
-    );
-
-    if (matchedRequest) {
-      console.log("Matched Request ID:", matchedRequest.request_id);
-      const reqId = matchedRequest.request_id;
-      formData.append('request_id', reqId);
-    } else {
-      console.warn("No matching request found.");
-    }
-
       alert("Form submitted successfully!");
     } catch (err) {
       console.error('Error submitting form:', err);
@@ -115,7 +82,7 @@ export default function AddForm() {
         </div>
         <div>
           <label>Supporting Document</label>
-                    <input type="file" multiple onChange={(e) => setCommDocs(e.target.files)} />
+          <input type="file" multiple onChange={(e) => setCommDocs(e.target.files)} />
         </div>
         <div>
           <label>COMREL Employees Involved</label>
