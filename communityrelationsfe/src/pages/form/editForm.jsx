@@ -29,7 +29,8 @@ export default function EditForm() {
     }
 
     const formData = new FormData();
-    formData.append('created_by', createdby)
+    const username = createdby
+    formData.append('created_by', username)
   }, [requestID]);
 
   const handleChange = (e) => {

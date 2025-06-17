@@ -251,36 +251,91 @@ router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
       comm_Benef,
     } = req.body;
 
-    // Validate required fields
     if (!request_id || !created_by) {
-      console.error("Missing required parameters");
       return res.status(400).json({ error: "Missing request_id or created_by" });
     }
 
-    // Ensure `created_by` is always a valid string (handles arrays)
     const updatedByValue = Array.isArray(created_by) ? created_by[0] : String(created_by || 'Unknown');
+    const currentTimestamp = new Date();
 
-    // Handle file uploads correctly
     const docFilenames = req.files?.map(file => file.filename) || [];
 
-    // Execute database update
-    await knex('request_master')
-      .where({ request_id })
-      .update({
-        request_status,
-        comm_Area,
-        comm_Act,
-        date_Time,
-        comm_Venue,
-        comm_Guest,
-        comm_Docs: docFilenames.length > 0 ? docFilenames.join(',') : knex.raw('comm_Docs'), // Keep existing documents if none are uploaded
-        comm_Emps,
-        comm_Benef,
-        updated_by: updatedByValue, // Ensure `created_by` is stored as a string
-        updated_at: new Date(),
-      });
+    // If new files were uploaded, delete existing ones for this request_id
+    if (docFilenames.length > 0) {
+      const existingUploads = await knex('upload_master').where({ request_id });
 
-    console.log("Update successful:", request_id);
+      // Delete physical files
+      for (const upload of existingUploads) {
+        if (fs.existsSync(upload.file_path)) {
+          fs.unlinkSync(upload.file_path);
+        }
+      }
+
+      // Delete upload_master records
+      await knex('upload_master').where({ request_id }).del();
+
+      // Insert new files into upload_master
+      let uploadIdToSave = [];
+
+      const updated_by = Array.isArray(req.body.created_by) ? req.body.created_by[0] : req.body.created_by;
+
+
+      for (let file of req.files) {
+        const { mimetype, originalname, filename } = file;
+        const filePath = path.join(DIR, filename);
+
+        const [upload] = await knex('upload_master')
+          .insert({
+            request_id,
+            upload_type: mimetype,
+            file_path: filePath,
+            file_name: originalname,
+            upload_date: currentTimestamp,
+            upload_by: updated_by,
+            updated_by,
+            updated_at: currentTimestamp,
+          })
+          .returning('upload_id');
+
+        const upload_id = upload.upload_id || upload;
+        uploadIdToSave.push(upload_id);
+      }
+
+      // Update request_master with new doc info and upload_id
+      await knex('request_master')
+        .where({ request_id })
+        .update({
+          request_status,
+          comm_Area,
+          comm_Act,
+          date_Time,
+          comm_Venue,
+          comm_Guest,
+          comm_Docs: docFilenames.join(','),
+          upload_id: uploadIdToSave.join(','),
+          comm_Emps,
+          comm_Benef,
+          updated_by: updatedByValue,
+          updated_at: currentTimestamp,
+        });
+    } else {
+      // No files uploaded, update only other fields
+      await knex('request_master')
+        .where({ request_id })
+        .update({
+          request_status,
+          comm_Area,
+          comm_Act,
+          date_Time,
+          comm_Venue,
+          comm_Guest,
+          comm_Emps,
+          comm_Benef,
+          updated_by: updatedByValue,
+          updated_at: currentTimestamp,
+        });
+    }
+
     res.status(200).json({ message: "Request updated successfully" });
 
   } catch (err) {
@@ -288,6 +343,77 @@ router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
     res.status(500).json({ error: "Failed to update request", details: err.message });
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
+//   try {
+//     console.log("Received Data:", req.body);
+
+//     const {
+//       request_id,
+//       created_by,
+//       request_status,
+//       comm_Area,
+//       comm_Act,
+//       date_Time,
+//       comm_Venue,
+//       comm_Guest,
+//       comm_Emps,
+//       comm_Benef,
+//     } = req.body;
+
+//     // Validate required fields
+//     if (!request_id || !created_by) {
+//       console.error("Missing required parameters");
+//       return res.status(400).json({ error: "Missing request_id or created_by" });
+//     }
+
+//     // Ensure `created_by` is always a valid string (handles arrays)
+//     const updatedByValue = Array.isArray(created_by) ? created_by[0] : String(created_by || 'Unknown');
+
+//     // Handle file uploads correctly
+//     const docFilenames = req.files?.map(file => file.filename) || [];
+
+//     // Execute database update
+//     await knex('request_master')
+//       .where({ request_id })
+//       .update({
+//         request_status,
+//         comm_Area,
+//         comm_Act,
+//         date_Time,
+//         comm_Venue,
+//         comm_Guest,
+//         comm_Docs: docFilenames.length > 0 ? docFilenames.join(',') : knex.raw('comm_Docs'), // Keep existing documents if none are uploaded
+//         comm_Emps,
+//         comm_Benef,
+//         updated_by: updatedByValue, // Ensure `created_by` is stored as a string
+//         updated_at: new Date(),
+//       });
+
+//     console.log("Update successful:", request_id);
+//     res.status(200).json({ message: "Request updated successfully" });
+
+//   } catch (err) {
+//     console.error("Database Update Error:", err);
+//     res.status(500).json({ error: "Failed to update request", details: err.message });
+//   }
+// });
+
+
 
 router.get('/delete-request', async(req,res,next) => {
     try{

@@ -37,6 +37,9 @@ export default function DashboardDeafult() {
         const handleToBePosted = () => {
             window.location.replace(`${config.baseUrl}/comrel/tobeposted`);
         }
+        const handletestpage = () => {
+            window.location.replace(`${config.baseUrl}/comrel/test`);
+        }
 
     return(
      <div>
@@ -57,7 +60,9 @@ export default function DashboardDeafult() {
         <button onClick={handleToBePosted}>
             To Be Posted
         </button>
-
+        <button onClick={handletestpage}>
+            TEST LOGIN
+        </button>
      </div>   
     )
     

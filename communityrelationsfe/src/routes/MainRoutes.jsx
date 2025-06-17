@@ -32,6 +32,10 @@ const MainRoutes = {
     element: <RoleAccess/>,
     children: [
         {
+            path: 'test',
+            element: <TEST/>
+        },
+        {
             path:'/',
             element:<DashboardDeafult/>
         },

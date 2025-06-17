@@ -1,27 +1,120 @@
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import config from "config";
-import { useEffect, useState } from "react";
+import Chart from "react-apexcharts";
+import {
+  Box,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 
 export default function Reports() {
   const [data, setData] = useState([]);
+  const [sortBy, setSortBy] = useState("request_status");
+  const [chartData, setChartData] = useState({
+    options: { chart: { id: "request-summary" }, xaxis: { categories: [] } },
+    series: [],
+  });
+
+  const groupData = (groupKey) => {
+    const grouped = {};
+
+    data.forEach((item) => {
+      const date = new Date(item.date_Time).toLocaleDateString(); // normalize date
+      const subGroup = item[groupKey] || "Unknown";
+
+      if (!grouped[date]) grouped[date] = {};
+      if (!grouped[date][subGroup]) grouped[date][subGroup] = 0;
+
+      grouped[date][subGroup]++;
+    });
+
+    const categories = Object.keys(grouped); // x-axis = dates
+    const subGroupKeys = new Set();
+
+    // collect all unique subgroup keys
+    Object.values(grouped).forEach((subGroupObj) => {
+      Object.keys(subGroupObj).forEach((key) => subGroupKeys.add(key));
+    });
+
+    const series = Array.from(subGroupKeys).map((key) => ({
+      name: key,
+      data: categories.map((date) => grouped[date][key] || 0),
+    }));
+
+    setChartData({
+      options: {
+        chart: { id: "request-summary", stacked: true },
+        xaxis: { categories },
+        title: {
+          text: `Requests by ${groupKey.replace("_", " ")} per Date`,
+          align: "center",
+        },
+      },
+      series,
+    });
+  };
 
   useEffect(() => {
-    axios.get(`${config.baseApi1}/request/history`)
-      .then(response => {
-        setData(response.data); // Expecting an array of records
+    axios
+      .get(`${config.baseApi1}/request/history`)
+      .then((response) => {
+        setData(response.data);
       })
-      .catch(error => {
-        console.error("Error fetching data:", error);
-      });
+      .catch((error) => console.error("Error fetching data:", error));
   }, []);
 
-  const thStyle = { border: "1px solid #ddd", padding: "8px", backgroundColor: "#f2f2f2" };
+  useEffect(() => {
+    if (data.length > 0) {
+      groupData(sortBy);
+    }
+  }, [data, sortBy]);
+
+  const thStyle = {
+    border: "1px solid #ddd",
+    padding: "8px",
+    backgroundColor: "#f2f2f2",
+  };
   const tdStyle = { border: "1px solid #ddd", padding: "8px" };
 
+  const handleBack = () => {
+    window.location.replace(`${config.baseUrl}/comrel/dashboard`);
+  }
+
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Reports</h2>
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
+    <Box sx={{ padding: 3 }}>
+      <Typography variant="h4" mb={3}>
+        <button onClick={handleBack} style={{ marginRight: '20px' }}>Back</button>
+        Reports
+      </Typography>
+
+      {/* Sort/Group Filter */}
+      <FormControl sx={{ minWidth: 200, mb: 2 }}>
+        <InputLabel>Group By</InputLabel>
+        <Select
+          value={sortBy}
+          label="Group By"
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          <MenuItem value="request_status">Status</MenuItem>
+          <MenuItem value="comm_Act">Activity</MenuItem>
+          <MenuItem value="comm_Venue">Venue</MenuItem>
+        </Select>
+      </FormControl>
+
+      {/* Chart */}
+      <Chart
+        options={chartData.options}
+        series={chartData.series}
+        type="bar"
+        height={350}
+      />
+
+      {/* Table */}
+      <table style={{ borderCollapse: "collapse", width: "100%", marginTop: "30px" }}>
         <thead>
           <tr>
             <th style={thStyle}>ID</th>
@@ -55,6 +148,6 @@ export default function Reports() {
           ))}
         </tbody>
       </table>
-    </div>
+    </Box>
   );
 }
