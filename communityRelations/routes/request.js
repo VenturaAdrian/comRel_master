@@ -217,6 +217,8 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
+
+
     // FETCH ALL VALUES VIA REQUEST_ID
     router.get('/editform', async (req, res, next) => {
   try {
@@ -344,77 +346,6 @@ router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
-//   try {
-//     console.log("Received Data:", req.body);
-
-//     const {
-//       request_id,
-//       created_by,
-//       request_status,
-//       comm_Area,
-//       comm_Act,
-//       date_Time,
-//       comm_Venue,
-//       comm_Guest,
-//       comm_Emps,
-//       comm_Benef,
-//     } = req.body;
-
-//     // Validate required fields
-//     if (!request_id || !created_by) {
-//       console.error("Missing required parameters");
-//       return res.status(400).json({ error: "Missing request_id or created_by" });
-//     }
-
-//     // Ensure `created_by` is always a valid string (handles arrays)
-//     const updatedByValue = Array.isArray(created_by) ? created_by[0] : String(created_by || 'Unknown');
-
-//     // Handle file uploads correctly
-//     const docFilenames = req.files?.map(file => file.filename) || [];
-
-//     // Execute database update
-//     await knex('request_master')
-//       .where({ request_id })
-//       .update({
-//         request_status,
-//         comm_Area,
-//         comm_Act,
-//         date_Time,
-//         comm_Venue,
-//         comm_Guest,
-//         comm_Docs: docFilenames.length > 0 ? docFilenames.join(',') : knex.raw('comm_Docs'), // Keep existing documents if none are uploaded
-//         comm_Emps,
-//         comm_Benef,
-//         updated_by: updatedByValue, // Ensure `created_by` is stored as a string
-//         updated_at: new Date(),
-//       });
-
-//     console.log("Update successful:", request_id);
-//     res.status(200).json({ message: "Request updated successfully" });
-
-//   } catch (err) {
-//     console.error("Database Update Error:", err);
-//     res.status(500).json({ error: "Failed to update request", details: err.message });
-//   }
-// });
-
-
-
 router.get('/delete-request', async(req,res,next) => {
     try{
         const request_id = req.query.request_id;
@@ -463,12 +394,18 @@ const Comments = db.define('comment_master',{
 
   // GET comments for a specific request
 router.get('/comment/:request_id', async (req, res) => {
+
   try {
     const request_id = req.params.request_id;
+    console.log(request_id);
+
+
     const comments = await knex('comment_master')
       .where({ request_id })
       .orderBy('created_at', 'desc');
     res.json(comments);
+
+
   } catch (err) {
     console.error('Error fetching comments:', err);
     res.status(500).json({ message: 'Failed to fetch comments' });
@@ -481,17 +418,36 @@ router.post('/comment', async (req, res) => {
     const { comment, created_by, request_id } = req.body;
     const created_at = new Date();
 
-    await knex('comment_master').insert({
-      comment,
-      created_by,
-      created_at,
-      request_id
-    });
+    console.log('Received comment data:', { comment, created_by, request_id });
+
+    // Insert the comment (SQL Server returns inserted ID as an array)
+    const [comment_id] = await knex('comment_master')
+      .insert({
+        comment,
+        created_by,
+        created_at,
+        request_id
+      }).returning('comment_id');
+
+    console.log('Inserted comment ID:', comment_id);
+
+    // Update the request_master with the new comment ID
+    await knex('request_master')
+      .where({ request_id })
+      .update({
+        comment_id,
+        updated_by: created_by,
+        updated_at: created_at
+      });
 
     res.status(200).json({ message: 'Comment added successfully' });
   } catch (err) {
     console.error('Error adding comment:', err);
-    res.status(500).json({ message: 'Failed to add comment' });
+    res.status(500).json({
+      message: 'Failed to add comment',
+      error: err.message,
+      stack: err.stack // Optional: helps during development
+    });
   }
 });
 
@@ -512,6 +468,8 @@ router.post('/comment-decline', async function (req, res, next) {
         updated_by: currentUser,
         updated_at: currentTimestamp
       });
+
+    
 
     res.status(200).json({ message: 'Request status updated successfully' });
   } catch (err) {

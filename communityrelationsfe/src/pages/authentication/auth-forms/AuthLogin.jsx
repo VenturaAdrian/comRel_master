@@ -27,6 +27,8 @@ const [password, setPassword] = useState('');
           console.log("Response data:", res.data)
           setUserInfo({...res.data});
 
+
+        
           localStorage.setItem('user', JSON.stringify(res.data)); //to store in local storage'user'
 
           console.log("GETTING USER CREDENTIALS", localStorage.getItem('user'))

@@ -116,7 +116,6 @@ require('dotenv').config();
       } = req.body;
 
     try{
-      console.log('PASSWORD:',pass_word)
         await knex('users_master'). insert({
           emp_firstname: emp_firstname,
           emp_lastname: emp_lastname,

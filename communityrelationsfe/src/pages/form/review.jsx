@@ -22,7 +22,8 @@ export default function Review() {
           params: { id: requestID }
         });
         setFormData(requestRes.data);
-
+        
+        //fetch all comments for this request
         const commentsRes = await axios.get(`${config.baseApi1}/request/comment/${requestID}`);
         setComments(commentsRes.data);
     
@@ -46,6 +47,11 @@ export default function Review() {
 const handleCommentSubmit = async (e) => {
   e.preventDefault();
 
+
+
+
+
+  
   try {
     // First, add the comment
     await axios.post(`${config.baseApi1}/request/comment`, {
@@ -207,7 +213,7 @@ const handleCommentSubmit = async (e) => {
       </div>
 
       {/* Show comment input only when declining */}
-      {showComments && (
+     
         <div>
           <label>Comment / Feedback</label>
           <input
@@ -217,7 +223,7 @@ const handleCommentSubmit = async (e) => {
           />
           <button onClick={handleCommentSubmit}>Submit Comment</button>
         </div>
-      )}
+      
 
       <div>
         <button onClick={HandleBack}>BACK</button>
