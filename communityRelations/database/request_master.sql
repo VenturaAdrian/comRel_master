@@ -1,7 +1,7 @@
 USE [comrel_master]
 GO
 
-/****** Object:  Table [dbo].[request_master]    Script Date: 11/06/2025 3:44:31 pm ******/
+/****** Object:  Table [dbo].[request_master]    Script Date: 6/26/2025 8:47:29 AM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -9,21 +9,22 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE TABLE [dbo].[request_master](
-	[request_id] [int] IDENTITY(1,1) ,
-	[request_status] [varchar](255) ,
-	[comment_id] [varchar](255) ,
-	[comm_Area] [varchar](255) ,
-	[comm_Act] [varchar](255) ,
-	[date_Time] [varchar](255) L,
-	[comm_Venue] [varchar](255) ,
-	[comm_Guest] [varchar](255) ,
-	[comm_Docs] [varchar](max) ,
-	[comm_Emps] [varchar](255) ,
-	[comm_Benef] [varchar](255) ,
-	[created_by] [varchar](255) ,
-	[created_at] [varchar](255) ,
-	[updated_by] [varchar](255) ,
-	[updated_at] [varchar](255) ,
+	[request_id] [int] IDENTITY(1,1) NOT NULL,
+	[request_status] [varchar](255) NULL,
+	[comment_id] [varchar](255) NULL,
+	[upload_id] [varchar](255) NULL,
+	[comm_Area] [varchar](255) NULL,
+	[comm_Act] [varchar](255) NULL,
+	[date_Time] [varchar](255) NULL,
+	[comm_Venue] [varchar](255) NULL,
+	[comm_Guest] [varchar](255) NULL,
+	[comm_Docs] [varchar](max) NULL,
+	[comm_Emps] [varchar](255) NULL,
+	[comm_Benef] [varchar](255) NULL,
+	[created_by] [varchar](255) NULL,
+	[created_at] [varchar](255) NULL,
+	[updated_by] [varchar](255) NULL,
+	[updated_at] [varchar](255) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[request_id] ASC

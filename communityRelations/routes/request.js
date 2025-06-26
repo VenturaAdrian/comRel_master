@@ -64,6 +64,15 @@ require('dotenv').config();
         comm_Benef:{
             type:DataTypes.STRING,
         },
+        comrelofficer:{
+          type:DataTypes.STRING,
+        },
+        comrelthree:{
+          type:DataTypes.STRING,
+        },
+        comreldh:{
+          type:DataTypes.STRING,
+        },
         created_by:{
           type:DataTypes.STRING,
         },
@@ -166,6 +175,9 @@ router.post('/add-request-form', upload.array('comm_Docs'), async (req, res) => 
         comm_Emps,
         comm_Benef,
         comment_id: '',
+        comrelofficer: 0,
+        comrelthree: 0,
+        comreldh: 0,
         created_by,
         created_at: currentTimestamp,
         updated_by: '',
@@ -307,7 +319,7 @@ router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
       await knex('request_master')
         .where({ request_id })
         .update({
-          request_status,
+          request_status:'request',
           comm_Area,
           comm_Act,
           date_Time,
@@ -325,7 +337,7 @@ router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
       await knex('request_master')
         .where({ request_id })
         .update({
-          request_status,
+          request_status: 'request',
           comm_Area,
           comm_Act,
           date_Time,
@@ -455,21 +467,49 @@ router.post('/comment', async (req, res) => {
 router.post('/comment-decline', async function (req, res, next) {
   const currentTimestamp = new Date();
   const {
-    request_status,
+    emp_position,
     request_id,
     currentUser
   } = req.body;
 
   try {
-    await knex('request_master')
+
+      if (emp_position === 'comrelofficer'){
+      await knex('request_master')
       .where({ request_id: request_id })
       .update({
-        request_status,
+        request_status: 'Request',
         updated_by: currentUser,
-        updated_at: currentTimestamp
+        updated_at: currentTimestamp,
+        comrelofficer: 0,
+        comrelthree: 0,
+        comreldh: 0
       });
-
-    
+    }
+    else if (emp_position === 'comrelthree'){
+      await knex('request_master')
+      .where({ request_id: request_id })
+      .update({
+        request_status: 'Request',
+        updated_by: currentUser,
+        updated_at: currentTimestamp,
+        comrelofficer: 0,
+        comrelthree: 0,
+        comreldh: 0
+      });
+    }
+    else if (emp_position === 'comreldh'){
+      await knex('request_master')
+      .where({ request_id: request_id })
+      .update({
+        request_status: 'request',
+        updated_by: currentUser,
+        updated_at: currentTimestamp,
+        comrelofficer: 0,
+        comrelthree: 0,
+        comreldh: 0
+      });
+    }
 
     res.status(200).json({ message: 'Request status updated successfully' });
   } catch (err) {
@@ -480,13 +520,15 @@ router.post('/comment-decline', async function (req, res, next) {
 
 router.post('/accept', async (req, res, next) => {
   const currentTimestamp = new Date();
-  const { request_status, request_id, currentUser } = req.body;
+  const { request_id, currentUser, emp_position } = req.body;
 
   try {
     
     const [requestData] = await knex('request_master')
       .select('comm_Docs')
       .where({ request_id });
+
+    
 
     if (!requestData) {
       return res.status(404).json({ message: 'Request not found' });
@@ -524,13 +566,45 @@ router.post('/accept', async (req, res, next) => {
       }
     }
 
-    await knex('request_master')
+    if (emp_position === 'comrelofficer'){
+      await knex('request_master')
       .where({ request_id })
       .update({
-        request_status,
+        request_status: 'Pending review for ComrelIII',
         updated_by: currentUser,
-        updated_at: currentTimestamp
+        updated_at: currentTimestamp,
+        comrelofficer: 1
       });
+    }
+    else if (emp_position === 'comrelthree'){
+      await knex('request_master')
+      .where({ request_id })
+      .update({
+        request_status: 'Pending review for Comrel DH',
+        updated_by: currentUser,
+        updated_at: currentTimestamp,
+        comrelthree:1
+      });
+    }
+    else if (emp_position === 'comreldh'){
+      await knex('request_master')
+      .where({ request_id })
+      .update({
+        request_status: 'accepted',
+        updated_by: currentUser,
+        updated_at: currentTimestamp,
+        comreldh: 1
+      });
+    }
+
+    // await knex('request_master')
+    //   .where({ request_id })
+    //   .update({
+    //     request_status,
+    //     updated_by: currentUser,
+    //     updated_at: currentTimestamp
+        
+    //   });
 
     res.status(200).json({ message: 'Request accepted and files categorized successfully.' });
 
@@ -539,5 +613,9 @@ router.post('/accept', async (req, res, next) => {
     res.status(500).json({ message: 'Failed to accept request', error: err.message });
   }
 });
+
+router.post('/accept', async (req, res, next) => { 
+  
+})
 
 module.exports = router;

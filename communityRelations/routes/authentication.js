@@ -78,8 +78,8 @@ require('dotenv').config();
         }
 
         console.log("The username: ", user[0].user_name);
-        console.log("Position", user[0].emp_position);
-        console.log("First Name: ", user[0].emp_firstname);
+          console.log("Position", user[0].emp_position);
+          console.log("First Name: ", user[0].emp_firstname);
         console.log("Last Name: ", user[0].emp_lastname);
         console.log("Role: ", user[0].emp_role);
         console.log("The PWD: ",user[0].pass_word);
@@ -114,6 +114,8 @@ require('dotenv').config();
         pass_word,
         emp_role
       } = req.body;
+
+      
 
     try{
         await knex('users_master'). insert({
