@@ -24,6 +24,45 @@ require('dotenv').config();
         },
     });
 
+    router.post('/register', async function (req, res, next){
+  
+  const currentTimestamp = new Date(); //Current time - YYYY/MM/DD - 00/HH/MM/SSS
+
+    console.log(req)
+      const {
+        emp_firstname,
+        emp_lastname,
+        user_name,
+        emp_position,
+        pass_word,
+        emp_role
+      } = req.body;
+
+      
+
+    try{
+        await knex('users_master'). insert({
+          emp_firstname: emp_firstname,
+          emp_lastname: emp_lastname,
+          user_name: user_name,
+          emp_position: emp_position,
+          pass_word:pass_word,
+          emp_role: emp_role,
+          created_by: '',
+          created_at: currentTimestamp,
+          updated_by: '',
+          updated_at: currentTimestamp, 
+          is_active: 1
+          
+        });
+      console.log('User registered');
+
+    }catch(err){
+          console.error("Registration error:", err); // show actual error
+      res.status(500).json({ error: "Registration failed", details: err.message });
+      }
+  });
+
     var db = new Sequelize(process.env.DATABASE, process.env.USER, process.env.PASSWORD,{
       host: process.env.SERVER,
       dialect: "mssql",
@@ -315,11 +354,16 @@ router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
         uploadIdToSave.push(upload_id);
       }
 
+      
+
+      if(position === 'encoder'){
+
+      }
       // Update request_master with new doc info and upload_id
       await knex('request_master')
         .where({ request_id })
         .update({
-          request_status:'request',
+          request_status: request_status,
           comm_Area,
           comm_Act,
           date_Time,
@@ -337,7 +381,7 @@ router.post('/updateform', upload.array('comm_Docs'), async (req, res) => {
       await knex('request_master')
         .where({ request_id })
         .update({
-          request_status: 'request',
+          request_status: request_status,
           comm_Area,
           comm_Act,
           date_Time,
@@ -467,18 +511,19 @@ router.post('/comment', async (req, res) => {
 router.post('/comment-decline', async function (req, res, next) {
   const currentTimestamp = new Date();
   const {
+    request_status,
     emp_position,
     request_id,
     currentUser
   } = req.body;
 
   try {
-
+    
       if (emp_position === 'comrelofficer'){
       await knex('request_master')
-      .where({ request_id: request_id })
+      .where({ request_id})
       .update({
-        request_status: 'Request',
+        request_status: 'reviewed',
         updated_by: currentUser,
         updated_at: currentTimestamp,
         comrelofficer: 0,
@@ -488,9 +533,9 @@ router.post('/comment-decline', async function (req, res, next) {
     }
     else if (emp_position === 'comrelthree'){
       await knex('request_master')
-      .where({ request_id: request_id })
+      .where({ request_id})
       .update({
-        request_status: 'Request',
+        request_status: 'reviewed',
         updated_by: currentUser,
         updated_at: currentTimestamp,
         comrelofficer: 0,
@@ -500,9 +545,9 @@ router.post('/comment-decline', async function (req, res, next) {
     }
     else if (emp_position === 'comreldh'){
       await knex('request_master')
-      .where({ request_id: request_id })
+      .where({ request_id})
       .update({
-        request_status: 'request',
+        request_status: 'reviewed',
         updated_by: currentUser,
         updated_at: currentTimestamp,
         comrelofficer: 0,
@@ -614,8 +659,6 @@ router.post('/accept', async (req, res, next) => {
   }
 });
 
-router.post('/accept', async (req, res, next) => { 
-  
-})
+
 
 module.exports = router;

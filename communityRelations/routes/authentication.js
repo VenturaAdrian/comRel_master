@@ -101,80 +101,13 @@ require('dotenv').config();
   });
 
 
-  router.post('/register', async function (req, res, next){
   
-  const currentTimestamp = new Date(); //Current time - YYYY/MM/DD - 00/HH/MM/SSS
-
-    console.log(req)
-      const {
-        emp_firstname,
-        emp_lastname,
-        user_name,
-        emp_position,
-        pass_word,
-        emp_role
-      } = req.body;
-
-      
-
-    try{
-        await knex('users_master'). insert({
-          emp_firstname: emp_firstname,
-          emp_lastname: emp_lastname,
-          user_name: user_name,
-          emp_position: emp_position,
-          pass_word:pass_word,
-          emp_role: emp_role,
-          created_by: '',
-          created_at: currentTimestamp,
-          updated_by: '',
-          updated_at: currentTimestamp, 
-          is_active: 1
-          
-        });
-      console.log('User registered');
-
-    }catch(err){
-          console.error("Registration error:", err); // show actual error
-      res.status(500).json({ error: "Registration failed", details: err.message });
-      }
-  });
 
   router.get('/users', async function (req, res, next) {
       // view all users
       const result = await knex.select('*').from('users_master');
       res.json(result);
       console.log(result)
-
-      //add user
-      // const reg = knex('users_master').insert({
-      //   PersonID:6,
-      //   FirstName: 'Vii',
-      //   LastName: 'Digi'
-      // })
-      // .then(() => {
-      //   console.log('saved');
-      // })
-
-      //delete user
-      // const del = knex('users_master').where('PersonID',6).del().then(() => {
-      //   console.log('deleted a user');
-      // })
-
-      //EDIT user
-      // const edit = knex('users_master')
-      //                   .where('PersonID',1)
-      //                   .update({
-      //                     PersonID: 69,
-      //                     FirstName: 'Lala',
-      //                     LastName: 'Land'
-      //                   })
-      // .then(() => {
-      //   console.log('Updated user');
-      // })
-
-
-
 
   })
 
